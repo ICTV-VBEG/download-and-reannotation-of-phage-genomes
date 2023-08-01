@@ -15,9 +15,59 @@ If you use this workflow in a paper, don't forget to give credits to the authors
 
 # TODO for workflow implementation
 
+Our general aims in implementing this workflow are to:
+
+1. Follow the best practices regarding snakemake workflow folder structures: https://snakemake.readthedocs.io/en/latest/snakefiles/deployment.html#distribution-and-reproducibility
+2. Use conda environments for automated software installation: https://snakemake.readthedocs.io/en/latest/snakefiles/deployment.html#integrated-package-management
+3. Use snakemake wrappers for any steps where they are available: https://snakemake-wrappers.readthedocs.io/
+4. Enable automatic inclusion of the workflow in the snakemake workflow catalog (this should work out-of-the-box, standardized usage can be enabled later): https://snakemake.github.io/snakemake-workflow-catalog/?rules=true
+5. Use some example data for automated testing (continuous integration) of workflow functionality in a `.test/` folder and using GitHub Actions.
+
+## Software installation
+
+(Almost) all of the software installation will be handled using conda.
+You can follow the snakemake installation instructions to get a working version of conda (or its faster drop-in replacement tool mamba): https://snakemake.readthedocs.io/en/latest/getting_started/installation.html#installation-via-conda-mamba
+
+### snakemake wrappers
+
+The easiest example for software installation (and rule implementation) is when a snakemake wrapper exists, for example the [snakemake wrapper for `fastqc`](https://snakemake-wrappers.readthedocs.io/en/stable/wrappers/fastqc.html).
+In such a case, we can simply copy-paste the example code from the snakemake wrapper documentation into our workflow and adapt `input`, `output` and maybe the `params` specifications.
+Software installation is automatically handled by the wrapper.
+However, none of the tools and packages used in this workflow has a snakemake wrapper available.
+It could be a mid-term goal to provide snakemake wrappers for different steps in this workflow, to make the code easier to reuse.
+But at the start, we will focus on implementing rules and installating the software with the `(bio)conda installation` described in the following section.
+
+### (bio)conda installation
+
+For all of the tools used in the workflow, the software is available via the [`bioconda`](https://bioconda.github.io/) or [`conda-forge`](https://conda-forge.org/) conda channel.
+In such cases, we can simply create a [`YAML`](https://koesterlab.github.io/data-science-for-bioinfo/data_formats/yaml.html) environment definition file in the folder `worfklow/envs/`.
+For example, for `biopython` (used for the `Entrez` module below) this would be a file called `workflow/envs/biopython.yaml` with the following contents:
+```
+channels:
+  - conda-forge
+dependencies:
+  - biopython =1.81
+```
+
+For packages on bioconda, you have to add `  - bioconda` in the row below `  - conda-forge`, so snakemake can find and install them.
+
+You can then reference the environment (and thus use `biopython`) in any snakemake rule (and any script you run in it) with:
+
+```
+rule some_biopython_rule:
+    input: "..."
+    output: "..."
+    conda: "../envs/biopython.yaml"
+    script: 
+      "../scripts/efetch_fasta.py"
+```
+
+## workflow steps overview
+
 This workflow uses a combination of bash scripts, some sourced online and others written by DT.
 
-## 1. Download genomes using Efetch
+### 1. Download genomes using Efetch
+
 This script uses Efetch from the NCBI EUtilities package to download fasta records for a list specified in a txt file - one accession per line. Ryan Cook has probably got a much better implementation in his Inphared pipeline
 
 ```python
@@ -44,22 +94,22 @@ for i,acc in enumerate(accs):
     sys.stdout.write(handle.read())
   except:
     sys.stderr.write( "Error! Cannot fetch: %s        \n" % acc)
- ```
+```
+
+Usage:
+```bash
+./efetch_fasta.py < accessions.txt > accessions.fasta
+```
  
- Usage:
- ```bash
- ./efetch_fasta.py < accessions.txt > accessions.fasta
- ```
- 
- ## 2. Split multi-fasta file into separate records
- I rename the fasta records in the file as some annotation tools have issues with fasta ids over a certain number of characters or which contain whitespace
- ```bash
- sed -i accessions.bak 's/\.[0-9].*//g' accessions.fasta
- ```
- 
- The following script splits a multi-fasta file into individual files, named by the sequence id:
- 
- ```python
+### 2. Split multi-fasta file into separate records
+I rename the fasta records in the file as some annotation tools have issues with fasta ids over a certain number of characters or which contain whitespace
+```bash
+sed -i accessions.bak 's/\.[0-9].*//g' accessions.fasta
+```
+
+The following script splits a multi-fasta file into individual files, named by the sequence id:
+
+```python
 #!/usr/bin/env python3
 import os
 from Bio import SeqIO
@@ -85,25 +135,25 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-f','--fastafile',
-                        action  ="store",
-                        default ="test_fasta.fasta",
-                        help="Fasta File for parsing")
+                       action  ="store",
+                       default ="test_fasta.fasta",
+                       help="Fasta File for parsing")
     parser.add_argument('-d','--outfastadir',
-                        action  ="store",
-                        default ="splitoutput",
-                        help    ="Fasta File output directory")
+                       action  ="store",
+                       default ="splitoutput",
+                       help    ="Fasta File output directory")
 
     args = parser.parse_args()
-    split(fastafile     =   args.fastafile,
-          outfastadir   =   args.outfastadir)
- ```
+    split(  fastafile     =   args.fastafile,
+            outfastadir   =   args.outfastadir)
+```
+
+Usage: 
+```bash
+./split_multifasta.py -f accessions.fasta -d split_output
+```
  
- Usage: 
- ```bash
- ./split_multifasta.py -f accessions.fasta -d split_output
- ```
- 
-## 3. Reannotate genomes
+### 3. Reannotate genomes
 This is simply a step to ensure that there is consistency across the gene calls. There are both pros and cons to this step.
  
 Annotation can be performed using either [Prokka](https://github.com/tseemann/prokka) or [Phannotate](https://github.com/gbouras13/pharokka) - whichever is the user's preference. For the former, a custom database is set up using a [PHROGs HMM db](https://s3.climb.ac.uk/ADM_share/all_phrogs.hmm.gz).
@@ -137,14 +187,14 @@ Usage: script is in PATH or copied to directory containing the split FASTA files
 ./batch_pharokka.sh
 ```
 
-## 4. Collate reannotated GFF or FAA files for pan-genome analysis
+### 4. Collate reannotated GFF or FAA files for pan-genome analysis
 Recursively copy all .gff and .faa files to an appropriate directory for downstream analysis
 ```
 cp **/*.gff genomes_gff/
 cp **/*.faa genomes_faa/
 ```
 
-## 5. [OPTION] Pangenome analysis using PIRATE
+### 5. [OPTION] Pangenome analysis using PIRATE
 Again, a variety of tools are available here. Note that none are specifically designed for phage genomes, rather they are focussed on bacterial core genomes.
 Some examples are [PIRATE], [Panaroo], [Roary]
 
@@ -161,7 +211,7 @@ subsample_outputs.pl -i genomes_pirate/PIRATE.gene_families.tsv -g genomes_pirat
 
 At this point, some manual processing is required. I create a copy of the genomes_pirate_gene_families.prev_locus.tsv file, sort by number_genomes column and transform the data to a binary presence/absence matrix
 
-## 6. [OPTION] Using MMSeqs2 to cluster proteins
+### 6. [OPTION] Using MMSeqs2 to cluster proteins
 
 Using a concatenated file of all of the proteins, create an MMSeqs database. There is code within PanACoTA which also performs these steps.
 ```
@@ -207,7 +257,7 @@ genomes(mmseq_df)
 
 ```
 
-## 7. Extract protein sequences correlating to a "signature" gene product
+### 7. Extract protein sequences correlating to a "signature" gene product
 We can concatenate all of the proteins called by the annotation pipeline
 ```
 cat *.faa > proteins.faa
@@ -442,7 +492,7 @@ die ("\n");
 } # end of sub help
 ```
 
-## 8. Signature gene alingment and calculating ML phylogeny using IQTree2
+### 8. Signature gene alingment and calculating ML phylogeny using IQTree2
 This step does require manual input if the user wishes to add an outgroup sequence to use later as a root for the tree.  
 
 There are a variety of different packages that could be used for the alignment step e.g. [MAFFT](https://mafft.cbrc.jp/alignment/software/), [Clustal Omega](http://www.clustal.org/omega/) etc.
