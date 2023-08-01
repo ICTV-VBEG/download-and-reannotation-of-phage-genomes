@@ -1,15 +1,18 @@
-# Snakemake workflow: `<name>`
+# Snakemake workflow: `download-and-reannotation-of-phage-genomes`
 
 [![Snakemake](https://img.shields.io/badge/snakemake-≥6.3.0-brightgreen.svg)](https://snakemake.github.io)
-[![GitHub actions status](https://github.com/<owner>/<repo>/workflows/Tests/badge.svg?branch=main)](https://github.com/<owner>/<repo>/actions?query=branch%3Amain+workflow%3ATests)
+[![GitHub actions status](https://github.com/ICTV-VBEG/download-and-reannotation-of-phage-genomes/workflows/Tests/badge.svg?branch=main)](https://github.com/ICTV-VBEG/download-and-reannotation-of-phage-genomes/actions?query=branch%3Amain+workflow%3ATests)
 
 
-A Snakemake workflow for `<description>`
+A Snakemake workflow for `A snakemake workflow for downloading and reannotating phage genomes. The workflow is based on prior work by Dann Turner.`
 
 
 ## Usage
 
-The usage of this workflow is described in the [Snakemake Workflow Catalog](https://snakemake.github.io/snakemake-workflow-catalog/?usage=<owner>%2F<repo>).
+The usage of this workflow is described in the [Snakemake Workflow Catalog](https://snakemake.github.io/snakemake-workflow-catalog/?usage=ICTV-VBEG%2Fdownload-and-reannotation-of-phage-genomes).
+
+If you use this workflow in a paper, don't forget to give credits to the authors by citing the URL of this (original) download-and-reannotation-of-phage-genomessitory and its DOI (see above).
+
 
 If you use this workflow in a paper, don't forget to give credits to the authors by citing the URL of this (original) <repo>sitory and its DOI (see above).
 
