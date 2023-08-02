@@ -5,13 +5,15 @@
 
 # rule all
 rule all:
-  input:
-  output:
+  input: 
 
 # rule efetch
 rule efetch:
   input:
   output:
+  conda: "../envs/efetch.yaml"
+  script: 
+      "../scripts/efetch_fasta.py"
 
 # rename_fasta_records
 rule rename_fasta_records:
