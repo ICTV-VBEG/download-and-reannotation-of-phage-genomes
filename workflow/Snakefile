@@ -14,7 +14,7 @@ rule efetch:
   input:
       "../.test/example_data/test_accession.txt"
   output:
-      "results/downloaded_data.fna"
+      "./results/downloaded_data.fna"
   conda: 
       "./envs/efetch.yaml"
   script: 
