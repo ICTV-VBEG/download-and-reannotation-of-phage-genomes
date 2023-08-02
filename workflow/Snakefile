@@ -3,6 +3,8 @@
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
 # in particular regarding the standardized folder structure mentioned there. 
 
+configfile="../config.yaml"
+
 # rule all
 rule all:
   input: 
@@ -51,7 +53,7 @@ rule pharokka:
     faa_file="{split_fastas}.faa"
   threads: config["threads"]
   log: "workflow/logs/pharokka.log"
-  conda: 
+  conda: "env/pharokka.yaml"
   shell:
     """
     (tag=${{input}%.fasta};
