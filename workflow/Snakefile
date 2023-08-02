@@ -5,13 +5,15 @@
 
 # rule all
 rule all:
-  input:
-  output:
+  input: 
 
 # rule efetch
 rule efetch:
   input:
   output:
+  conda: "../envs/efetch.yaml"
+  script: 
+      "../scripts/efetch_fasta.py"
 
 # rename_fasta_records
 rule rename_fasta_records:
@@ -20,8 +22,25 @@ rule rename_fasta_records:
 
 # rule split_multifasta
 rule rsplit_multifasta:
-  input:
-  output:
+  input: ".test/example_data/{fasta_prefix}.fna"
+  output: scatter.split("results/split_fastas/{{fasta_prefix}}/{{fasta_prefix}}.{scatteritem}.fna")
+  conda:
+        "envs/seqkit.yaml"
+  params:
+        number_of_parts=workflow.cores,
+        dirname=lambda wc, output: os.path.dirname(output[0]),
+  shell:
+        "seqkit split2 "
+        " --by-part {params.number_of_parts} "
+        " --out-dir {params.dirname}"
+        " {input}; "
+        'FILES=( {params.dirname}/*.fna );'
+        "for f in ${{FILES[@]}}; "
+        "do "
+        "  without_suffix=${{f%%.fna}}; "
+        "  number=${{without_suffix##*part_}}; "
+        "  mv $f ${{f%%.part_*.fna}}.${{number##*0}}-of-{params.number_of_parts}.fna; "
+        "done "
 
 # rule pharokka:
 rule pharokka:

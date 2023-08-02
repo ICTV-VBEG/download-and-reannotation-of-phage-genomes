@@ -1,7 +1,7 @@
-name: download
+name: pharokka
 channels:
 - conda-forge
 - bioconda
 - defaults
 dependencies:
-- biopython
+- pharokka
