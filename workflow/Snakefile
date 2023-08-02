@@ -56,6 +56,7 @@ rule split_multifasta:
         "done "
 
 # rule pharokka:
+
 rule pharokka:
   input: 
     "../results/split_output/{split_fastas}.fasta"
@@ -65,7 +66,7 @@ rule pharokka:
   log: "workflow/logs/pharokka.log"
   conda: "env/pharokka.yaml"
   shell:
-	  "pharokka -i {input} -l {{split_fastas}##*_} -o {output} -p {split_fastas} -t {threads} &> {log}"
+	  "pharokka -i {input} -l {{wildcards.split_fastas}##*_} -o {output} -p {wildcards.split_fastas} -t {threads} &> {log}"
 
 
 
