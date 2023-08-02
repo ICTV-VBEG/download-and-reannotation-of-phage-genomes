@@ -8,6 +8,7 @@ configfile: "../config.yaml"
 # rule all
 rule all:
   input: 
+	"results/downloaded_data.fna"
 
 # rule efetch
 rule efetch:
