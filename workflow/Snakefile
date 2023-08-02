@@ -4,8 +4,14 @@
 # in particular regarding the standardized folder structure mentioned there. 
 
 # rule all
+rule all:
+  input:
+  output:
 
 # rule efetch
+rule efetch:
+  input:
+  output:
 
 # rename_fasta_records
 
