@@ -12,10 +12,13 @@ rule all:
 # rule efetch
 rule efetch:
   input:
+      "../.test/example_data/test_accession.txt"
   output:
-  conda: "../envs/efetch.yaml"
+      "results/downloaded_data.fna"
+  conda: 
+      "./envs/efetch.yaml"
   script: 
-      "../scripts/efetch_fasta.py"
+      "./scripts/efetch_fasta.py < {input} > {output}"
 
 # rename_fasta_records
 rule rename_fasta_records:
