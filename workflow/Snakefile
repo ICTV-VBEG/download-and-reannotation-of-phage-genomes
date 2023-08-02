@@ -19,7 +19,7 @@ rule efetch:
   conda: 
 	"./envs/download.yaml"
   script: 
-	"./scripts/efetch_fasta.py < {input} > {output}"
+	"python3 ./scripts/efetch_fasta.py < {input} > {output}"
 
 # rename_fasta_records
 rule rename_fasta_records:
