@@ -19,8 +19,15 @@ rule efetch:
 
 # rename_fasta_records
 rule rename_fasta_records:
+  # Renames the record names in the multi-fasta to avoid problems 
+  # with whitespaces or too long names in certain tools.
+  # Creates a backup of the original record names: .bak file.
   input:
+  	"accessions_original.fasta"
   output:
+  	"accessions_renamed.bak"
+  shell:
+  	"sed 's/\.[0-9].*//g' {input} > {output}"
 
 # rule split_multifasta
 rule rsplit_multifasta:
