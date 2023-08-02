@@ -47,14 +47,14 @@ rule split_multifasta:
 # rule pharokka:
 rule pharokka:
   input: 
-    "../results/split_output/{split_fastas}.fasta"
+    "../results/split_output/{accession_id}.fasta"
   output: 
-    "../results/{split_fastas}"
+    "../results/pharokka/{accession_id}"
   threads: config["threads"]
   log: "workflow/logs/pharokka.log"
   conda: "env/pharokka.yaml"
   shell:
-	  "pharokka -i {input} -l {{wildcards.split_fastas}##*_} -o {output} -p {wildcards.split_fastas} -t {threads} &> {log}"
+	  "pharokka -i {input} -l {{wildcards.accession_id}##*_} -o {output} -p {wildcards.accession_id} -t {threads} &> {log}"
 
 
 
