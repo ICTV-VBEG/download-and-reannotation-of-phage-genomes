@@ -8,6 +8,7 @@ configfile: "../config.yaml"
 # rule all
 rule all:
   input: 
+"./results/downloaded_data.fna"
 
 # rule efetch
 rule efetch:
@@ -16,7 +17,7 @@ rule efetch:
   output:
       "./results/downloaded_data.fna"
   conda: 
-      "./envs/efetch.yaml"
+      "./envs/download.yaml"
   script: 
       "./scripts/efetch_fasta.py < {input} > {output}"
 
