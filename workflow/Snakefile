@@ -8,19 +8,30 @@ configfile: "../config.yaml"
 # rule all
 rule all:
   input: 
+	"./results/downloaded_data.fna"
 
 # rule efetch
 rule efetch:
   input:
+	"../.test/example_data/test_accession.txt"
   output:
-  conda: "../envs/efetch.yaml"
+	"./results/downloaded_data.fna"
+  conda: 
+	"./envs/download.yaml"
   script: 
-      "../scripts/efetch_fasta.py"
+	"./scripts/efetch_fasta.py < {input} > {output}"
 
 # rename_fasta_records
 rule rename_fasta_records:
+  # Renames the record names in the multi-fasta to avoid problems 
+  # with whitespaces or too long names in certain tools.
+  # Creates a backup of the original record names: .bak file.
   input:
+  	"accessions_original.fasta"
   output:
+  	"accessions_renamed.bak"
+  shell:
+  	"sed 's/\.[0-9].*//g' {input} > {output}"
 
 # rule split_multifasta
 rule split_multifasta:
@@ -55,5 +66,6 @@ rule pharokka:
   conda: "env/pharokka.yaml"
   shell:
 	  "pharokka -i {input} -l $string -o {output} -p $tag -t {threads} &> {log}"
+
 
 
