@@ -58,7 +58,7 @@ rule split_multifasta:
 # rule pharokka:
 rule pharokka:
   input: 
-    "{split_fastas}.fasta"
+    "../results/split_output/{split_fastas}.fasta"
   output: 
     "../results/{split_fastas}"
   threads: config["threads"]
