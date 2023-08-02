@@ -35,7 +35,7 @@ rule rename_fasta_records:
 
 # rule split_multifasta
 rule split_multifasta:
-  input: "../.test/example_data/{fasta_prefix}.fna"
+  input: "./results/downloaded_data.fna"
   output: scatter.split("./results/split_fastas/{{fasta_prefix}}/{{fasta_prefix}}.{scatteritem}.fna")
   conda:
         "envs/seqkit.yaml"
