@@ -23,9 +23,22 @@ rule rsplit_multifasta:
   input:
   output:
 
-# rule prokka:
-rule prokka:
-  input:
-  output:
+# rule pharokka:
+rule pharokka:
+  input: 
+    "{split_fastas}.fasta"
+  output: 
+    gff_file="{split_fastas}.gff"
+    faa_file="{split_fastas}.faa"
+  threads: config["threads"]
+  log: "workflow/logs/pharokka.log"
+  conda: 
+  shell:
+    """
+    (tag=${{input}%.fasta};
+	  string=${tag##*_};
+	  echo $string;
+	  pharokka -i {input} -l $string -o $tag -p $tag -t {threads}) &> {log}
+    """
 
 
