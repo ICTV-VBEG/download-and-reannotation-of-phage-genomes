@@ -14,10 +14,18 @@ rule efetch:
   output:
 
 # rename_fasta_records
+rule rename_fasta_records:
+  input:
+  output:
 
 # rule split_multifasta
+rule rsplit_multifasta:
+  input:
+  output:
 
 # rule prokka:
+rule prokka:
+  input:
+  output:
 
-# rule pharokka:
 
