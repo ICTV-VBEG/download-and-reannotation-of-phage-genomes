@@ -54,7 +54,7 @@ rule pharokka:
   log: "workflow/logs/pharokka.log"
   conda: "env/pharokka.yaml"
   shell:
-	  "pharokka -i {input} -l {{wildcards.accession_id}##*_} -o {output} -p {wildcards.accession_id} -t {threads} &> {log}"
+	  "pharokka.py -i {input} -l {{wildcards.accession_id}##*_} -o {output} -p {wildcards.accession_id} -t {threads} &> {log}"
 
 
 
