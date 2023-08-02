@@ -27,7 +27,7 @@ rule rename_fasta_records:
   # with whitespaces or too long names in certain tools.
   # Creates a backup of the original record names: .bak file.
   input:
-  	"accessions_original.fasta"
+  	"./results/downloaded_data.fna"
   output:
   	"accessions_renamed.bak"
   shell:
