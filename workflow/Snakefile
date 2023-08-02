@@ -65,7 +65,7 @@ rule pharokka:
   log: "workflow/logs/pharokka.log"
   conda: "env/pharokka.yaml"
   shell:
-	  "pharokka -i {input} -l $string -o {output} -p $tag -t {threads} &> {log}"
+	  "pharokka -i {input} -l {{split.fastas}##*_} -o {output} -p {split_fastas} -t {threads} &> {log}"
 
 
 
