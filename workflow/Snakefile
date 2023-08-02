@@ -29,7 +29,7 @@ rule rename_fasta_records:
   input:
   	"./results/downloaded_data.fna"
   output:
-  	"accessions_renamed.bak"
+  	"./results/accessions_renamed.fna"
   shell:
   	"sed 's/\.[0-9].*//g' {input} > {output}"
 
