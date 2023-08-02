@@ -3,7 +3,7 @@
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
 # in particular regarding the standardized folder structure mentioned there. 
 
-configfile="../config.yaml"
+configfile: "../config.yaml"
 
 # rule all
 rule all:
