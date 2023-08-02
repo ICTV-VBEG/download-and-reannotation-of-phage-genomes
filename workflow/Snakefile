@@ -56,7 +56,6 @@ rule split_multifasta:
         "done "
 
 # rule pharokka:
-
 rule pharokka:
   input: 
     "../results/split_output/{split_fastas}.fasta"
