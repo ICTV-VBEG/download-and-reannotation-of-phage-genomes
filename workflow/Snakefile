@@ -2,24 +2,41 @@
 # Please follow the best practices: 
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
 # in particular regarding the standardized folder structure mentioned there. 
+import os 
+configfile: "./config/config.yaml"
 
-configfile: "../config.yaml"
+def get_all_out(wildcards):
+    result_out = []
+    wildcards = []
+    result_out = './results/all/'
+    with open('./test/test_accessions.txt','r') as fh:
+        for i in fh:
+            wildcards.append(i.rstrip())
+            check_point = f"{i.rstrip()}/{i.rstrip()}_done"
+            os.path.join(result_out,check_point)
+    return result_out, wildcards
+
+scattergather:
+    split=workflow.cores
+
+out_files, accessions = lambda wildcards : get_all_out(wildcards)
 
 # rule all
 rule all:
   input: 
-	"./results/downloaded_data.fna"
+      out_files
+	     
 
 # rule efetch
 rule efetch:
   input:
-	"../.test/example_data/test_accession.txt"
+	    "../.test/example_data/test_accession.txt"
   output:
-	"./results/downloaded_data.fna"
+	    "./results/downloaded_data.fna"
   conda: 
-	"./envs/download.yaml"
-  script: 
-	"python3 ./scripts/efetch_fasta.py < {input} > {output}"
+	    "./envs/download.yaml"
+  shell: 
+      "python3 ./scripts/efetch_fasta.py < {input} > {output}"
 
 # rename_fasta_records
 rule rename_fasta_records:
@@ -36,37 +53,29 @@ rule rename_fasta_records:
 # rule split_multifasta
 rule split_multifasta:
   input: "./results/downloaded_data.fna"
-  output: scatter.split("./results/split_fastas/{{fasta_prefix}}/{{fasta_prefix}}.{scatteritem}.fna")
+  output: expand("./results/split_output/{{accession}}.fna", accessions)
   conda:
         "envs/seqkit.yaml"
   params:
         number_of_parts=workflow.cores,
         dirname=lambda wc, output: os.path.dirname(output[0]),
   shell:
-        "seqkit split2 "
-        " --by-part {params.number_of_parts} "
-        " --out-dir {params.dirname}"
-        " {input}; "
-        'FILES=( {params.dirname}/*.fna );'
-        "for f in ${{FILES[@]}}; "
-        "do "
-        "  without_suffix=${{f%%.fna}}; "
-        "  number=${{without_suffix##*part_}}; "
-        "  mv $f ${{f%%.part_*.fna}}.${{number##*0}}-of-{params.number_of_parts}.fna; "
-        "done "
+        
 
 # rule pharokka:
 
 rule pharokka:
   input: 
-    "../results/split_output/{split_fastas}.fasta"
+    "../results/split_output/{accession}.fasta"
   output: 
-    "../results/{split_fastas}"
+      dirname("../results/all/{accession}")
+  params:
+    check_point="../results/all/{accession}/{accession}_done"
   threads: config["threads"]
-  log: "workflow/logs/pharokka.log"
+  log: "workflow/logs/pharokka/{accession}.log"
   conda: "env/pharokka.yaml"
   shell:
-	  "pharokka -i {input} -l {{wildcards.split_fastas}##*_} -o {output} -p {wildcards.split_fastas} -t {threads} &> {log}"
+	  "pharokka -i {input} -l {{wildcards.accession}##*_} -o {output} -p {wildcards.split_fastas} -t {threads} &> {log} | touch {params.checkpoint}"
 
 
 
