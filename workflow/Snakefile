@@ -53,29 +53,36 @@ rule rename_fasta_records:
 # rule split_multifasta
 rule split_multifasta:
   input: "./results/downloaded_data.fna"
-  output: expand("./results/split_output/{{accession}}.fna", accessions)
+  output: scatter.split("./results/split_fastas/{{fasta_prefix}}/{{fasta_prefix}}.{scatteritem}.fna")
   conda:
         "envs/seqkit.yaml"
   params:
         number_of_parts=workflow.cores,
         dirname=lambda wc, output: os.path.dirname(output[0]),
   shell:
-        
+        "seqkit split2 "
+        " --by-part {params.number_of_parts} "
+        " --out-dir {params.dirname}"
+        " {input}; "
+        'FILES=( {params.dirname}/*.fna );'
+        "for f in ${{FILES[@]}}; "
+        "do "
+        "  without_suffix=${{f%%.fna}}; "
+        "  number=${{without_suffix##*part_}}; "
+        "  mv $f ${{f%%.part_*.fna}}.${{number##*0}}-of-{params.number_of_parts}.fna; "
+        "done "
 
 # rule pharokka:
-
 rule pharokka:
   input: 
-    "../results/split_output/{accession}.fasta"
+    "../results/split_output/{split_fastas}.fasta"
   output: 
-      dirname("../results/all/{accession}")
-  params:
-    check_point="../results/all/{accession}/{accession}_done"
+    "../results/{split_fastas}"
   threads: config["threads"]
   log: "workflow/logs/pharokka/{accession}.log"
   conda: "env/pharokka.yaml"
   shell:
-	  "pharokka -i {input} -l {{wildcards.accession}##*_} -o {output} -p {wildcards.split_fastas} -t {threads} &> {log} | touch {params.checkpoint}"
+	  "pharokka -i {input} -l {{wildcards.split_fastas}##*_} -o {output} -p {wildcards.split_fastas} -t {threads} &> {log}"
 
 
 
