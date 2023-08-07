@@ -1,4 +1,4 @@
-name: download
+name: python3
 channels:
 - conda-forge
 - bioconda

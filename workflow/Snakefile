@@ -3,40 +3,42 @@
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
 # in particular regarding the standardized folder structure mentioned there. 
 import os 
-configfile: "./config/config.yaml"
+configfile: "config/config.yaml"
 
-def get_all_out(wildcards):
-    result_out = []
-    wildcards = []
-    result_out = './results/all/'
-    with open('./test/test_accessions.txt','r') as fh:
+def get_all_out():
+    all_out = []
+    accessions = []
+    result_out = 'results/all/'
+    with open('.test/example_data/test_accessions.txt','r') as fh:
         for i in fh:
-            wildcards.append(i.rstrip())
-            check_point = f"{i.rstrip()}/{i.rstrip()}_done"
-            os.path.join(result_out,check_point)
-    return result_out, wildcards
+            
+          accessions.append(i.rstrip())
+          check_point = f"{i.rstrip()}/{i.rstrip()}_done"
+          all_out.append(os.path.join(result_out,check_point))
+
+    return (all_out, accessions)
 
 scattergather:
     split=workflow.cores
 
-out_files, accessions = lambda wildcards : get_all_out(wildcards)
+out_files, ACCESSIONS =  get_all_out()
 
 # rule all
 rule all:
   input: 
-      out_files
+      expand('results/all/{accession}/{accession}_done', accession=ACCESSIONS)
 	     
 
 # rule efetch
 rule efetch:
   input:
-	    "../.test/example_data/test_accession.txt"
+	    ".test/example_data/test_accessions.txt"
   output:
-	    "./results/downloaded_data.fna"
+	    "results/tmp/downloaded_data.fna"
   conda: 
-	    "./envs/download.yaml"
+	    "envs/download.yaml"
   shell: 
-      "python3 ./scripts/efetch_fasta.py < {input} > {output}"
+      "python3 scripts/efetch_fasta.py < {input} > {output}"
 
 # rename_fasta_records
 rule rename_fasta_records:
@@ -44,45 +46,35 @@ rule rename_fasta_records:
   # with whitespaces or too long names in certain tools.
   # Creates a backup of the original record names: .bak file.
   input:
-  	"./results/downloaded_data.fna"
+  	"results/tmp/downloaded_data.fna"
   output:
-  	"./results/accessions_renamed.fna"
+  	"results/tmp/accessions_renamed.fna"
   shell:
   	"sed 's/\.[0-9].*//g' {input} > {output}"
 
 # rule split_multifasta
 rule split_multifasta:
-  input: "./results/downloaded_data.fna"
-  output: scatter.split("./results/split_fastas/{{fasta_prefix}}/{{fasta_prefix}}.{scatteritem}.fna")
+  input: "results/tmp/downloaded_data.fna"
+  output: expand("results/fasta/{accession}.fna", accession=ACCESSIONS)
   conda:
-        "envs/seqkit.yaml"
-  params:
-        number_of_parts=workflow.cores,
-        dirname=lambda wc, output: os.path.dirname(output[0]),
+        "envs/python.yaml"
   shell:
-        "seqkit split2 "
-        " --by-part {params.number_of_parts} "
-        " --out-dir {params.dirname}"
-        " {input}; "
-        'FILES=( {params.dirname}/*.fna );'
-        "for f in ${{FILES[@]}}; "
-        "do "
-        "  without_suffix=${{f%%.fna}}; "
-        "  number=${{without_suffix##*part_}}; "
-        "  mv $f ${{f%%.part_*.fna}}.${{number##*0}}-of-{params.number_of_parts}.fna; "
-        "done "
+        "python3 ./scripts/split_multifasta.py {input} {output}"
 
 # rule pharokka:
 rule pharokka:
   input: 
-    "../results/split_output/{split_fastas}.fasta"
+    "results/fasta/{accession}.fna"
   output: 
-    "../results/{split_fastas}"
+    "results/all/{accession}/{accession}_done"
+  params:
+    out_path = "results/all/{accession}"
+
   threads: config["threads"]
   log: "workflow/logs/pharokka/{accession}.log"
   conda: "env/pharokka.yaml"
   shell:
-	  "pharokka -i {input} -l {{wildcards.split_fastas}##*_} -o {output} -p {wildcards.split_fastas} -t {threads} &> {log}"
+	  "pharokka -i {input} -l {{wildcards.accession}} -o {params.out_path} -p {{wildcards.accession}} -t {threads} &> {log} & touch {output}"
 
 
 
