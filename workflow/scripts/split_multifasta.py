@@ -2,6 +2,7 @@
 import sys
 
 def split_multi_fasta(input_file, output_paths):
+    print(input_file,output_paths)
     """
     Splits a multi FASTA file into separate files and saves each sequence into specified output paths.
 
@@ -44,18 +45,18 @@ def split_multi_fasta(input_file, output_paths):
             write_fasta_record(current_output_path, header, sequence)
 
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
     # Check if the correct number of arguments are provided
-    if len(sys.argv) < 3:
-        print("Usage: python script_name.py input_file output_path1 output_path2 ...")
-        sys.exit(1)
+    # if len(sys.argv) < 3:
+    #     print("Usage: python script_name.py input_file output_path1 output_path2 ...")
+    #     sys.exit(1)
 
     # First argument is the input file path
-    input_fasta_file = sys.argv[1]
+    # input_fasta_file = sys.argv[1]
 
     # Remaining arguments are the output file paths
-    output_paths_list = sys.argv[2:]
+    # output_paths_list = sys.argv[2:]
 
     # Call the function to split the multi FASTA file
-    split_multi_fasta(input_fasta_file, output_paths_list)
+split_multi_fasta(snakemake.input[0], snakemake.output[0:])
 

@@ -36,9 +36,9 @@ rule efetch:
   output:
 	    "results/tmp/downloaded_data.fna"
   conda: 
-	    "envs/download.yaml"
-  shell: 
-      "python3 scripts/efetch_fasta.py < {input} > {output}"
+	    "envs/python.yaml"
+  script: 
+      "scripts/efetch_fasta.py"
 
 # rename_fasta_records
 rule rename_fasta_records:
@@ -58,8 +58,8 @@ rule split_multifasta:
   output: expand("results/fasta/{accession}.fna", accession=ACCESSIONS)
   conda:
         "envs/python.yaml"
-  shell:
-        "python3 ./scripts/split_multifasta.py {input} {output}"
+  script:
+        "scripts/split_multifasta.py"
 
 # rule pharokka:
 rule pharokka:
@@ -72,9 +72,11 @@ rule pharokka:
 
   threads: config["threads"]
   log: "workflow/logs/pharokka/{accession}.log"
-  conda: "env/pharokka.yaml"
+  conda: "envs/pharokka.yaml"
   shell:
-	  "pharokka -i {input} -l {{wildcards.accession}} -o {params.out_path} -p {{wildcards.accession}} -t {threads} &> {log} & touch {output}"
+	  """
+    p={wildcards.accession}
+    pharokka.py -f -i {input} -l {wildcards.accession} -o {params.out_path} -p ${{p##*_}} -t {threads} &> {log} && touch {output}"""
 
 
 

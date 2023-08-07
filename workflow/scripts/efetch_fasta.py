@@ -1,23 +1,38 @@
 #!/usr/bin/env python3
-import sys
 from Bio import Entrez
 
-#define email for entrez login
-db           = "nuccore"
-Entrez.email = "some_email@somedomain.com"
+def download_fasta_from_ncbi(accession_file, output_file):
+    """
+    Downloads FASTA files from NCBI given a file with a list of accession IDs.
 
-#load accessions from arguments
-if len(sys.argv[1:]) > 1:
-  accs = sys.argv[1:]
-else: #load accesions from stdin
-  accs = [ l.strip() for l in sys.stdin if l.strip() ]
-#fetch
-sys.stderr.write( "Fetching %s entries from GenBank: %s\n" % (len(accs), ", ".join(accs[:10])))
-for i,acc in enumerate(accs):
-  try:
-    sys.stderr.write( " %9i %s          \r" % (i+1,acc))
-    handle = Entrez.efetch(db=db, rettype="fasta", id=acc)
-    #print output to stdout
-    sys.stdout.write(handle.read())
-  except:
-    sys.stderr.write( "Error! Cannot fetch: %s        \n" % acc)
+    Parameters:
+        accession_file (str): Path to the file containing a list of accession IDs, one per line.
+        output_directory (str): Directory where the downloaded FASTA files will be saved.
+
+    Returns:
+        None
+    """
+    # Read the accession IDs from the file
+    print(accession_file,output_file)
+    with open(accession_file, 'r') as file:
+        accession_ids = [line.strip() for line in file]
+
+    # Use the Entrez module to fetch FASTA sequences from NCBI
+    Entrez.email = 'example@example.com'  # this should come from the configfile
+
+    for accession_id in accession_ids:
+        try:
+            handle = Entrez.efetch(db='nucleotide', id=accession_id, rettype='fasta', retmode='text')
+            fasta_data = handle.read()
+            handle.close()
+
+            with open(output_file, 'a') as fasta_file:
+                fasta_file.write(fasta_data)
+
+            print(f'Successfully downloaded {accession_id}.')
+        except Exception as e:
+            print(f'Error downloading {accession_id}: {str(e)}')
+
+
+# Example usage:
+download_fasta_from_ncbi(snakemake.input[0], snakemake.output[0])
