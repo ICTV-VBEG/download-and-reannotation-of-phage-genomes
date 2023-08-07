@@ -1,0 +1,10 @@
+name: pharokka
+channels:
+- conda-forge
+- bioconda
+- defaults
+dependencies:
+- pharokka
+# download pharokka database
+post_link:
+  - 'install_databases.py -d'
