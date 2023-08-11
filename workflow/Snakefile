@@ -5,7 +5,7 @@
 import os
 
 
-configfile: ".test/config/config.yaml"
+configfile: "config/config.yaml"
 
 
 def get_all_out():
