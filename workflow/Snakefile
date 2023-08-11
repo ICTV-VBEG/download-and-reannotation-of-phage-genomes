@@ -1,82 +1,143 @@
-# Main entrypoint of the workflow. 
-# Please follow the best practices: 
+# Main entrypoint of the workflow.
+# Please follow the best practices:
 # https://snakemake.readthedocs.io/en/stable/snakefiles/best_practices.html,
-# in particular regarding the standardized folder structure mentioned there. 
-import os 
-configfile: "config/config.yaml"
+# in particular regarding the standardized folder structure mentioned there.
+import os
+
+
+configfile: ".test/config/config.yaml"
+
 
 def get_all_out():
     all_out = []
     accessions = []
-    result_out = 'results/all/'
-    with open('.test/example_data/test_accessions.txt','r') as fh:
+    result_out = "results/all/"
+    with open(config["accession_file"], "r") as fh:
         for i in fh:
-            
-          accessions.append(i.rstrip())
-          check_point = f"{i.rstrip()}/{i.rstrip()}_done"
-          all_out.append(os.path.join(result_out,check_point))
+            accessions.append(i.rstrip())
+            check_point = f"{i.rstrip()}/{i.rstrip()}_done"
+            all_out.append(os.path.join(result_out, check_point))
 
     return (all_out, accessions)
 
-scattergather:
-    split=workflow.cores
 
-out_files, ACCESSIONS =  get_all_out()
+out_files, ACCESSIONS = get_all_out()
+
 
 # rule all
 rule all:
-  input: 
-      expand('results/all/{accession}/{accession}_done', accession=ACCESSIONS)
-	     
+    input:
+        "results/outgroup_sequence_id.treefile",
+
 
 # rule efetch
 rule efetch:
-  input:
-	    ".test/example_data/test_accessions.txt"
-  output:
-	    "results/tmp/downloaded_data.fna"
-  conda: 
-	    "envs/python.yaml"
-  script: 
-      "scripts/efetch_fasta.py"
+    input:
+        config["accession_file"],
+    output:
+        "results/tmp/downloaded_data.fna",
+    conda:
+        "envs/python.yaml"
+    script:
+        "scripts/efetch_fasta.py"
+
 
 # rename_fasta_records
 rule rename_fasta_records:
-  # Renames the record names in the multi-fasta to avoid problems 
-  # with whitespaces or too long names in certain tools.
-  # Creates a backup of the original record names: .bak file.
-  input:
-  	"results/tmp/downloaded_data.fna"
-  output:
-  	"results/tmp/accessions_renamed.fna"
-  shell:
-  	"sed 's/\.[0-9].*//g' {input} > {output}"
+    # Renames the record names in the multi-fasta to avoid problems
+    # with whitespaces or too long names in certain tools.
+    # Creates a backup of the original record names: .bak file.
+    input:
+        "results/tmp/downloaded_data.fna",
+    output:
+        "results/tmp/accessions_renamed.fna",
+    shell:
+        "sed 's/\.[0-9].*//g' {input} > {output}"
+
 
 # rule split_multifasta
 rule split_multifasta:
-  input: "results/tmp/downloaded_data.fna"
-  output: expand("results/fasta/{accession}.fna", accession=ACCESSIONS)
-  conda:
+    input:
+        "results/tmp/accessions_renamed.fna",
+    output:
+        expand("results/fasta/{accession}.fna", accession=ACCESSIONS),
+    conda:
         "envs/python.yaml"
-  script:
-        "scripts/split_multifasta.py"
+    log:
+        "logs/split_multifasta.log",
+    shell:
+        "(python3 workflow/scripts/split_multifasta.py {input} {output}) > {log}"
 
-# rule pharokka:
+
+# rule pharokka
 rule pharokka:
-  input: 
-    "results/fasta/{accession}.fna"
-  output: 
-    "results/all/{accession}/{accession}_done"
-  params:
-    out_path = "results/all/{accession}"
+    input:
+        "results/fasta/{accession}.fna",
+    output:
+        check="results/all/{accession}/{accession}_done",
+        final=multiext("results/all/{accession}/{accession}", ".faa", ".gff"),
+    params:
+        out_path="results/all/{accession}",
+    threads: config["threads"]
+    log:
+        "logs/pharokka/{accession}.log",
+    conda:
+        "envs/pharokka.yaml"
+    shell:
+        """
+       (p={wildcards.accession};
+       pharokka.py -f -i {input} -l {wildcards.accession} -o {params.out_path} -p ${{p##*_}} -t {threads}) &> {log} && touch {output.check}
+       """
 
-  threads: config["threads"]
-  log: "workflow/logs/pharokka/{accession}.log"
-  conda: "envs/pharokka.yaml"
-  shell:
-	  """
-    p={wildcards.accession}
-    pharokka.py -f -i {input} -l {wildcards.accession} -o {params.out_path} -p ${{p##*_}} -t {threads} &> {log} && touch {output}"""
+
+rule cat_faa_files:
+    input:
+        expand("results/all/{accession}/{accession}.faa", accession=ACCESSIONS),
+    output:
+        "results/all/proteins.faa",
+    shell:
+        "cat {input} > {output}"
 
 
+rule extract_signatures:
+    input:
+        "results/all/proteins.faa",
+    output:
+        "results/protein_signatures.faa",
+    params:
+        signatures=config["signatures"],
+    log:
+        "logs/extract_signatures.log",
+    shell:
+        "(perl workflow/scripts/subset_fasta.pl -i {params.signatures} < {input} > {output}) {log}"
 
+
+rule mafft:
+    input:
+        "results/protein_signatures.faa",
+    output:
+        "results/protein_signatures.aligned.faa",
+    conda:
+        "envs/mafft.yaml"
+    threads: config["threads"]
+    log:
+        "logs/mafft.log",
+    shell:
+        "(mafft --thread {threads} {input} > {output}) > {log}"
+
+
+rule iqtree:
+    input:
+        "results/protein_signatures.aligned.faa",
+    output:
+        "results/outgroup_sequence_id.treefile",
+    conda:
+        "envs/iqtree.yaml"
+    log:
+        "logs/iqtree.log",
+    threads: config["threads"]
+    params:
+        outname="results/outgroup_sequence_id",
+        bootstraps=config["iqtree"]["bootstraps"],
+    shell:
+        "(iqtree2 -s {input} -o {params.outname} -st AA -m MFP -nt AUTO -mem 128G -bb {params.bootstraps} -alrt 1000 -cptime 120 -T {threads}) > {log}"
