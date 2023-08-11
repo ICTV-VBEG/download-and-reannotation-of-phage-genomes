@@ -4,4 +4,4 @@ channels:
 - bioconda
 - defaults
 dependencies:
-- pirate
+- pirate=1.0.5
