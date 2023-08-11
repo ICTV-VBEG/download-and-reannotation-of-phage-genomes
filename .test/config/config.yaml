@@ -1,0 +1,13 @@
+accession_file:
+  ".test/example_data/test_accessions.txt"
+
+threads: 1
+
+k: [21,33,55,77,99,127]
+
+signatures:
+  "/path/to/file/with/accessions representing a conserved protein group"
+ 
+iqtree:
+  bootstraps:
+    1000
