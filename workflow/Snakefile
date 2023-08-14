@@ -75,7 +75,12 @@ rule pharokka:
         "results/fasta/{accession}.fna",
     output:
         check="results/all/{accession}/{accession}_done",
-        final=multiext("results/all/{accession}/{accession}", ".faa", ".gff"),
+        faa=expand(
+            "results/all/{accession}/{prediction}_{accession}.faa",
+            accession=ACCESSIONS,
+            prediction=["phanotate", "terL"],
+        ),
+        # TODO: Add gff output
     params:
         out_path="results/all/{accession}",
     threads: config["threads"]
@@ -86,13 +91,20 @@ rule pharokka:
     shell:
         """
        (p={wildcards.accession};
-       pharokka.py -f -i {input} -l {wildcards.accession} -o {params.out_path} -p ${{p##*_}} -t {threads}) &> {log} && touch {output.check}
+       pharokka.py -f -i {input} -l {wildcards.accession} -o {params.out_path} -p ${{p##*_}} -t {threads};
+       mv results/all/{wildcards.accession}/phanotate.faa results/all/{wildcards.accession}/phanotate_{wildcards.accession}.faa;
+       mv results/all/{wildcards.accession}/terL.faa results/all/{wildcards.accession}/terL_{wildcards.accession}.faa;
+       ) &> {log} && touch {output.check}
        """
 
 
 rule cat_faa_files:
     input:
-        expand("results/all/{accession}/{accession}.faa", accession=ACCESSIONS),
+        expand(
+            "results/all/{accession}/{prediction}_{accession}.faa",
+            accession=ACCESSIONS,
+            prediction=["phanotate", "terL"],
+        ),
     output:
         "results/all/proteins.faa",
     shell:
