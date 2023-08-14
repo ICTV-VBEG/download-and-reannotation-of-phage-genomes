@@ -1,0 +1,8 @@
+name: pharokka
+channels:
+- conda-forge
+- bioconda
+- defaults
+dependencies:
+- pharokka=1.3.2
+

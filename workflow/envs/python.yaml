@@ -1,0 +1,9 @@
+name: python
+channels:
+- conda-forge
+- bioconda
+- defaults
+dependencies:
+- python>=3
+- biopython=1.81
+- numpy

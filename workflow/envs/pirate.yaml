@@ -1,0 +1,7 @@
+name: pirate
+channels:
+- conda-forge
+- bioconda
+- defaults
+dependencies:
+- pirate=1.0.5
